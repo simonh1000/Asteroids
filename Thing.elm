@@ -22,6 +22,9 @@ type alias Keys =
     , y : Int
     }
 
+desktop : Int
+desktop = 300
+
 -- UPDATE
 
 move : Model -> Point

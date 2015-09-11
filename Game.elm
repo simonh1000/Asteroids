@@ -1,13 +1,14 @@
 module Game (main) where
 
 import Color exposing (..)
+import Text exposing (..)
 import Graphics.Collage exposing (..)
 import Graphics.Element exposing (..)
 import Keyboard
-import Time exposing (fps, Time)
+import Time exposing (Time)
 import Signal exposing (..)
 
-import Thing exposing (Keys, Point, dist)
+import Thing exposing (Keys)
 import Rocket
 import Asteroid
 import Bullets
@@ -26,7 +27,10 @@ type alias Model =
 init =
     { state = Playing
     , rocket = Rocket.init
-    , asteroids = [Asteroid.init 125 50 6 1.5 20]
+    , asteroids =
+        [ Asteroid.init 125 50 6 1.5 20
+        , Asteroid.init -125 50 2 1.5 9
+        ]
     , bullets = { bullets = [], lastBullet = 0 }
     }
 
@@ -51,13 +55,15 @@ update (Input t sp ks) model =
             newAsteroids =
                 Asteroid.filterHits movedThings.bullets.bullets movedThings.asteroids
 
-        in case List.any (Asteroid.hit movedThings.rocket) movedThings.asteroids of
-            True -> { model | state <- Ended }
-            False ->
-                { movedThings |
-                      bullets <- newBullets
-                    , asteroids <- newAsteroids
-                }
+        in case
+            List.any (Asteroid.hit movedThings.rocket) movedThings.asteroids
+            || List.length newAsteroids == 0 of
+                True -> { model | state <- Ended }
+                False ->
+                    { movedThings |
+                          bullets <- newBullets
+                        , asteroids <- newAsteroids
+                    }
     else model
 
 moveThings : Keys -> Model -> Model
@@ -76,16 +82,24 @@ view : Model -> Element
 view model =
     if model.state == Playing
     then
-        collage 300 300 <|
-            (rect 300 300
-                |> filled black)
-            :: Rocket.view model.rocket
+        base <|
+            Rocket.view model.rocket
             :: List.map Asteroid.view model.asteroids
             ++ Bullets.view model.bullets
     else
-        collage 300 300 <|
-            [rect 300 300
-                |> filled black]
+        let
+            finalMessage =
+                if List.length model.asteroids == 0
+                then "Fabulous"
+                else "Bad luck"
+        in base [ text <| style textStyle (fromString finalMessage) ]
+
+base : List Form -> Element
+base lst =
+    collage 300 300 <|
+        (rect 300 300
+            |> filled black)
+        :: lst
 
 viewDebug : Model -> Input -> Element
 viewDebug model (Input t sp p) =
@@ -95,25 +109,28 @@ viewDebug model (Input t sp p) =
         :: [show <| List.length model.bullets.bullets ]
 
 -- INPUT
--- arrows, wasd     :: Signal { x :: Int, y :: Int }
--- shift,ctrl,space :: Signal Bool
-type Input
-    = Input Time Bool {x: Int, y:Int}
+
+type Input = Input Time Bool {x: Int, y:Int}
 
 input : Signal Input
-input =
-    let
-        delta = Time.every 100
-    in
-        Signal.map3 Input delta Keyboard.space Keyboard.arrows
+input = Signal.map3 Input (Time.every 100) Keyboard.space Keyboard.arrows
 
 -- MAIN
+
 main : Signal Element
-main =
-    let
-        -- gameplay = fps 10
-        -- signals = Signal.sampleOn gameplay Keyboard.arrows
-        -- model = foldp update init signals
-        model = foldp update init input
-    in Signal.map2 viewDebug model input
-    -- in Signal.map view model
+main = view <~ foldp update init input
+-- main = Signal.map2 viewDebug
+--             (foldp update init input)
+--             input
+
+-- STYLES
+
+textStyle : Style
+textStyle =
+    { typeface = []
+    , height = Just 34
+    , color = red
+    , bold = True
+    , italic = False
+    , line = Nothing
+    }
