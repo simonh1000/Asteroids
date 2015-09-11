@@ -6,8 +6,7 @@ import Graphics.Element exposing (..)
 
 import Thing exposing (Keys, Point, Model, keepIn)
 
--- MODEL
--- Uses Model from Thing
+-- MODEL : Uses Model from Thing
 
 init : Model
 init =  { pos = { x = 0, y = 0}
@@ -20,15 +19,15 @@ init =  { pos = { x = 0, y = 0}
 update : Keys -> Model -> Model
 update {x,y} model =
     { model |
-        pos <- move model
+        pos <- newPos model
     ,   direction <- model.direction - (toFloat x / 10)   -- calibrate as you wish
     ,   speed <- minmax <| model.speed + (toFloat y / 3)
     }
 
-move : Model -> Point
-move model =
+newPos : Model -> Point
+newPos model =
     { x = keepIn (model.pos.x + model.speed * cos model.direction) -150 150
-    , y = model.pos.y + model.speed * sin model.direction
+    , y = keepIn (model.pos.y + model.speed * sin model.direction) -150 150
     }
 
 minmax x = max 0 <| min x 5

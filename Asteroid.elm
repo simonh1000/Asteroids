@@ -1,10 +1,10 @@
-module Asteroid (init, view, update, Model) where
+module Asteroid (init, view, update, checkCrash, Model) where
 
 import Color exposing (..)
 import Graphics.Collage exposing (..)
 import Graphics.Element exposing (..)
 import Debug
-import Thing exposing (Point, floatMod)
+import Thing exposing (Point, floatMod, dist)
 
 -- MODEL
 type alias Model =
@@ -20,7 +20,6 @@ init =  { thing =
             }
         , size = 20
         }
-
 
 -- UPDATE
 update : Model -> Model
@@ -49,3 +48,7 @@ view model =
     ngon 5 model.size
         |> filled white
         |> move (model.thing.pos.x, model.thing.pos.y)
+
+-- HELPERS
+checkCrash : Thing.Model -> Model -> Bool
+checkCrash thingModel astModel = dist thingModel.pos astModel.thing.pos < astModel.size ^ 2
